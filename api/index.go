@@ -10,6 +10,8 @@ import (
 	"github.com/Aergiaaa/todolist/storage"
 )
 
+var tmplFS embed.FS
+
 func Handler(w http.ResponseWriter, r *http.Request) {
 	defer func() {
 		if err := recover(); err != nil {
@@ -55,8 +57,6 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	http.NotFound(w, r)
 }
 
-var tmplFS embed.FS
-
 // loadTemplates loads the HTML templates
 func loadTemplates() *template.Template {
 	tmpl := template.New("")
@@ -64,6 +64,12 @@ func loadTemplates() *template.Template {
 	// Parse templates from the embedded filesystem
 	var err error
 	tmpl, err = tmpl.ParseFS(tmplFS, "templates/*.html")
+
+	files, _ := tmplFS.ReadDir("templates")
+	for _, file := range files {
+		log.Println("Found template file:", file.Name())
+	}
+
 	if err != nil {
 		log.Println("Failed to parse templates:", err)
 		return template.Must(template.New("error").Parse("<html><body><h1>Template Error</h1></body></html>"))
