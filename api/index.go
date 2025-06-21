@@ -1,4 +1,4 @@
-package main
+package api
 
 import (
 	"html/template"
@@ -10,7 +10,7 @@ import (
 	"github.com/Aergiaaa/todolist/storage"
 )
 
-func main() {
+func Handler(w http.ResponseWriter, r *http.Request) {
 	// Initialize the storage
 	todoStore := storage.NewMemoryStorage()
 
@@ -19,21 +19,28 @@ func main() {
 
 	// Initialize the handlers
 	todoHandler := handlers.NewTodoHandler(todoStore, templates) // Set up routes
-	http.Handle("/todos/", todoHandler)
-	http.Handle("/todos", todoHandler) // Add a route without the trailing slash
-	http.Handle("/static/", http.StripPrefix("/static", http.FileServer(http.Dir("static"))))
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/" {
-			http.NotFound(w, r)
-			return
-		}
+
+	path := r.URL.Path
+
+	if path == "/" {
 		// Directly serve the todos list on the home page
 		todoHandler.ListTodos(w, r)
-	})
+		return
+	}
 
-	// Start the server
-	log.Println("Server starting on http://localhost:8080")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	if path == "/todos" || path == "/todos/" {
+		todoHandler.ListTodos(w, r)
+		return
+	}
+
+	if len(path) > 8 && path[:8] == "/static/" {
+		// For static files, we'll need to handle differently in serverless
+		// This is simplified and might need adjustment
+		http.StripPrefix("/static/", http.FileServer(http.Dir("static"))).ServeHTTP(w, r)
+		return
+	}
+
+	http.NotFound(w, r)
 }
 
 // loadTemplates loads the HTML templates
@@ -44,13 +51,13 @@ func loadTemplates() *template.Template {
 	// Get template files
 	templateFiles, err := filepath.Glob("templates/*.html")
 	if err != nil {
-		log.Fatal("Failed to get template files:", err)
+		log.Println("Failed to get template files:", err)
 	}
 
 	// Parse templates
 	tmpl, err = tmpl.ParseFiles(templateFiles...)
 	if err != nil {
-		log.Fatal("Failed to parse templates:", err)
+		log.Println("Failed to parse templates:", err)
 	}
 
 	return tmpl

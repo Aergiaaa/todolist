@@ -3,7 +3,7 @@ package storage
 import (
 	"errors"
 	"sync"
-	"todolist/models"
+	"github.com/Aergiaaa/todolist/models"
 )
 
 // MemoryStorage implements TodoStorage using in-memory storage

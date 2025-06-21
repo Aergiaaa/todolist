@@ -6,8 +6,8 @@ import (
 	"log"
 	"net/http"
 	"strings"
-	"todolist/models"
-	"todolist/storage"
+	"github.com/Aergiaaa/todolist/models"
+	"github.com/Aergiaaa/todolist/storage"
 )
 
 // TodoHandler handles todo-related requests

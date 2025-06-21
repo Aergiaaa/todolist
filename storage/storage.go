@@ -1,7 +1,7 @@
 package storage
 
 import (
-	"todolist/models"
+	"github.com/Aergiaaa/todolist/models"
 )
 
 // TodoStorage defines the interface for todo storage
