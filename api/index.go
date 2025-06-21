@@ -20,12 +20,17 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 
 	// Initialize the storage
 	todoStore := storage.NewMemoryStorage()
+	log.Println("Storage initialized")
 
 	// Load templates
+	log.Println("Loading templates...")
 	templates := loadTemplates()
+	log.Println("Templates loaded")
 
 	// Initialize the handlers
+	log.Println("Setting up handlers...")
 	todoHandler := handlers.NewTodoHandler(todoStore, templates) // Set up routes
+	log.Println("Handlers set up")
 
 	path := r.URL.Path
 
@@ -55,18 +60,35 @@ func loadTemplates() *template.Template {
 	// Create a new template with empty name
 	tmpl := template.New("")
 
-	// Get template files
-	templateFiles, err := filepath.Glob("./templates/*.html")
-	if err != nil {
-		log.Println("Failed to get template files:", err)
-		return template.Must(template.New("error").Parse("Template loading error"))
+	// Try different paths that might work in Vercel
+	templatePaths := []string{
+		"./templates/*.html",
+		"/templates/*.html",
+		"../templates/*.html",
+	}
+
+	var templateFiles []string
+	var err error
+
+	// Try each path until we find templates
+	for _, path := range templatePaths {
+		templateFiles, err = filepath.Glob(path)
+		if err == nil && len(templateFiles) > 0 {
+			log.Println("Found templates at:", path)
+			break
+		}
+	}
+
+	if len(templateFiles) == 0 {
+		log.Println("No template files found")
+		return template.Must(template.New("error").Parse("<html><body><h1>Todo List</h1><p>Template loading error</p></body></html>"))
 	}
 
 	// Parse templates
 	tmpl, err = tmpl.ParseFiles(templateFiles...)
 	if err != nil {
 		log.Println("Failed to parse templates:", err)
-		return template.Must(template.New("error").Parse("Template parsing error"))
+		return template.Must(template.New("error").Parse("<html><body><h1>Todo List</h1><p>Template parsing error</p></body></html>"))
 	}
 
 	return tmpl
