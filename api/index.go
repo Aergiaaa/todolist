@@ -11,6 +11,13 @@ import (
 )
 
 func Handler(w http.ResponseWriter, r *http.Request) {
+	defer func() {
+		if err := recover(); err != nil {
+			log.Println("Recovered from panic:", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		}
+	}()
+
 	// Initialize the storage
 	todoStore := storage.NewMemoryStorage()
 
@@ -34,9 +41,9 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(path) > 8 && path[:8] == "/static/" {
-		// For static files, we'll need to handle differently in serverless
-		// This is simplified and might need adjustment
-		http.StripPrefix("/static/", http.FileServer(http.Dir("static"))).ServeHTTP(w, r)
+		log.Println("Serving static files from:", path)
+
+		http.Error(w, "Static files are not implemented yet", http.StatusNotImplemented)
 		return
 	}
 
@@ -49,15 +56,17 @@ func loadTemplates() *template.Template {
 	tmpl := template.New("")
 
 	// Get template files
-	templateFiles, err := filepath.Glob("templates/*.html")
+	templateFiles, err := filepath.Glob("./templates/*.html")
 	if err != nil {
 		log.Println("Failed to get template files:", err)
+		return template.Must(template.New("error").Parse("Template loading error"))
 	}
 
 	// Parse templates
 	tmpl, err = tmpl.ParseFiles(templateFiles...)
 	if err != nil {
 		log.Println("Failed to parse templates:", err)
+		return template.Must(template.New("error").Parse("Template parsing error"))
 	}
 
 	return tmpl
