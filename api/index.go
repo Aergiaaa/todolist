@@ -1,10 +1,10 @@
 package api
 
 import (
+	"embed"
 	"html/template"
 	"log"
 	"net/http"
-	"path/filepath"
 
 	"github.com/Aergiaaa/todolist/handlers"
 	"github.com/Aergiaaa/todolist/storage"
@@ -55,41 +55,20 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	http.NotFound(w, r)
 }
 
+var tmplFS embed.FS
+
 // loadTemplates loads the HTML templates
 func loadTemplates() *template.Template {
-	// Create a new template with empty name
 	tmpl := template.New("")
 
-	// Try different paths that might work in Vercel
-	templatePaths := []string{
-		"./templates/*.html",
-		"/templates/*.html",
-		"../templates/*.html",
-	}
-
-	var templateFiles []string
+	// Parse templates from the embedded filesystem
 	var err error
-
-	// Try each path until we find templates
-	for _, path := range templatePaths {
-		templateFiles, err = filepath.Glob(path)
-		if err == nil && len(templateFiles) > 0 {
-			log.Println("Found templates at:", path)
-			break
-		}
-	}
-
-	if len(templateFiles) == 0 {
-		log.Println("No template files found")
-		return template.Must(template.New("error").Parse("<html><body><h1>Todo List</h1><p>Template loading error</p></body></html>"))
-	}
-
-	// Parse templates
-	tmpl, err = tmpl.ParseFiles(templateFiles...)
+	tmpl, err = tmpl.ParseFS(tmplFS, "templates/*.html")
 	if err != nil {
 		log.Println("Failed to parse templates:", err)
-		return template.Must(template.New("error").Parse("<html><body><h1>Todo List</h1><p>Template parsing error</p></body></html>"))
+		return template.Must(template.New("error").Parse("<html><body><h1>Template Error</h1></body></html>"))
 	}
 
+	log.Println("Templates loaded successfully using embed")
 	return tmpl
 }
