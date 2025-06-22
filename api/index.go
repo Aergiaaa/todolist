@@ -91,5 +91,9 @@ func loadTemplates() *template.Template {
 		return template.Must(template.New("error").Parse("<html><body>Template error</body></html>"))
 	}
 
+	for _, name := range tmpl.Templates() {
+		log.Println("Loaded template:", name.Name())
+	}
+
 	return tmpl
 }
