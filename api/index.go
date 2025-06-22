@@ -4,43 +4,11 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"path/filepath"
 
 	"github.com/Aergiaaa/todolist/handlers"
 	"github.com/Aergiaaa/todolist/storage"
 )
-
-// Hardcoded templates
-var baseTemplate = `<!DOCTYPE html>
-<html>
-<head>
-    <title>Todo List</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 2em; }
-        .todo-item { padding: 8px; border-bottom: 1px solid #eee; }
-        .completed { text-decoration: line-through; }
-    </style>
-</head>
-<body>
-    <h1>Todo List</h1>
-    {{template "content" .}}
-</body>
-</html>`
-
-var listTemplate = `{{define "content"}}
-    <form method="post" action="/todos">
-        <input type="text" name="title" placeholder="Add new todo">
-        <button type="submit">Add</button>
-    </form>
-    <div class="todo-list">
-        {{range .}}
-        <div class="todo-item {{if .Completed}}completed{{end}}">
-            {{.Title}}
-        </div>
-        {{else}}
-        <p>No todos yet!</p>
-        {{end}}
-    </div>
-{{end}}`
 
 func Handler(w http.ResponseWriter, r *http.Request) {
 	defer func() {
@@ -74,25 +42,22 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 
 // loadTemplates loads the hardcoded templates
 func loadTemplates() *template.Template {
-	tmpl := template.New("base")
-	var err error
+	tmpl := template.New("")
 
-	// Parse base template
-	tmpl, err = tmpl.Parse(baseTemplate)
+	// Get template files
+	templateFiles, err := filepath.Glob("templates/*.html")
 	if err != nil {
-		log.Println("Failed to parse base template:", err)
-		return template.Must(template.New("error").Parse("<html><body>Template error</body></html>"))
+		log.Fatal("Failed to get template files:", err)
 	}
 
-	// Parse list template
-	_, err = tmpl.Parse(listTemplate)
+	// Parse templates
+	tmpl, err = tmpl.ParseFiles(templateFiles...)
 	if err != nil {
-		log.Println("Failed to parse list template:", err)
-		return template.Must(template.New("error").Parse("<html><body>Template error</body></html>"))
+		log.Fatal("Failed to parse templates:", err)
 	}
 
-	for _, name := range tmpl.Templates() {
-		log.Println("Loaded template:", name.Name())
+	for _, file := range templateFiles {
+		log.Println("Loaded template:", file)
 	}
 
 	return tmpl
